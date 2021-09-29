@@ -1,0 +1,10 @@
+nbins = 32;
+min1 = min(intensitydata); max1 = max(intensitydata);
+IntensityRange = (max1 - min1);
+BinSize = (max1 - min1)/nbins;
+histogram = zeros(nbins+1,1); % initialize histogram
+   for iii = 1:length(intensitydata);
+    idx = floor( (intensitydata(iii) - min1)/BinSize) + 1; % bin location
+    histogram (idx) = histogram(idx) + 1; % increment histogram
+   end
+histogram = histogram /length(intensitydata); % normalize to 1

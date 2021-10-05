@@ -1,10 +1,94 @@
-nbins = 32;
-min1 = min(intensitydata); max1 = max(intensitydata);
-IntensityRange = (max1 - min1);
-BinSize = (max1 - min1)/nbins;
-histogram = zeros(nbins+1,1); % initialize histogram
-   for iii = 1:length(intensitydata);
-    idx = floor( (intensitydata(iii) - min1)/BinSize) + 1; % bin location
-    histogram (idx) = histogram(idx) + 1; % increment histogram
-   end
-histogram = histogram /length(intensitydata); % normalize to 1
+close all 
+clear all
+
+ 
+%Load images
+IntensityImage = niftiread('ICBMlores.nii.gz');
+LabelImage     = niftiread('ICBMGMWMCSFlores.nii.gz');
+%Extract non-background data
+labelmask = LabelImage(:);
+intensitydata = IntensityImage(:);
+labelsubset = labelmask(labelmask>0);
+intensitysubset =  intensitydata(labelmask>0);
+
+%Sort the intensity values
+summ = 0;
+for i = 1:442286
+    summ = summ + double(labelsubset(i,1))*double(intensitysubset(i,1));
+end
+l0 =0;
+l1 = 0;
+l2 = 0;
+l3 = 0;
+
+for i = 1:442286
+     if labelsubset(i) == 0
+         l0 = l0 + 1;
+     elseif labelsubset(i) == 1
+         l1 = l1 + 1;
+     elseif labelsubset(i) == 2
+         l2 = l2+1;
+     elseif labelsubset(i) == 3
+         l3 = l3+1;
+     end
+end
+Initial = [l1 l2 l3];
+pdfInitial = 1/sum(Initial)* Initial;
+EntropyBefore = -sum(pdfInitial .*log(pdfInitial ));
+L1 = 0;
+L2 = 0;
+L3 =0;
+K1 = 0;
+K2 = 0;
+K3 =0;
+igmax = -inf;
+xxx = zeros(2500,1);
+yyy = zeros(2500,1);
+for i = 1:2500
+    labelthresh2 = labelsubset(intensitysubset<i);
+    labelthresh3 = labelsubset(intensitysubset>i);
+    for j = 1:size(labelthresh2)
+        if labelthresh2(j) == 1
+            L1 = L1+1;
+        elseif labelthresh2(j) == 2
+            L2 = L2 +1;
+        elseif labelthresh2(j) == 3
+            L3 = L3 +1;
+        end
+    end
+    for k = 1:size(labelthresh3)
+        if labelthresh3(k) == 1
+            K1 = K1+1;
+        elseif labelthresh3(k) == 2
+            K2 = K2 +1;
+        elseif labelthresh3(k) == 3
+            K3 = K3 +1;
+        end
+    end
+  
+
+       GREYCSF = [ L1, L2, L3];
+       WHITE = [ K1,K2, K3];
+       pdfGREYCSF = 1/sum(GREYCSF)* GREYCSF;
+       pdfWHITE = 1/sum(WHITE )* WHITE ;
+       EntropyGREYCSF = -sum(pdfGREYCSF .*log(pdfGREYCSF ));
+       EntropyWHITE = -sum(pdfWHITE .*log(pdfWHITE));
+       EntropyAfter = sum(GREYCSF )/ sum(Initial ) * EntropyGREYCSF + sum(WHITE )/ sum(Initial ) * EntropyWHITE;
+       ig = EntropyBefore - EntropyAfter;
+
+       if ig > igmax
+           igmax = ig;
+           maxintensity = i;
+       end
+xxx(i) = i;
+yyy(i) = ig;
+L1 = 0;
+L2 = 0;
+L3 =0;
+K1 = 0;
+K2 = 0;
+K3 = 0;    
+end
+ igmax
+ maxintensity
+ plot(xxx,yyy)
